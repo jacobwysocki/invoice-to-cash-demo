@@ -11,11 +11,16 @@ public class InvoicesController : ControllerBase
 {
     private readonly IInvoiceRepository _repository;
     private readonly ICommissionService _commissionService;
+    private readonly IAgingService _agingService;
 
-    public InvoicesController(IInvoiceRepository repository, ICommissionService commissionService)
+    public InvoicesController(
+        IInvoiceRepository repository,
+        ICommissionService commissionService,
+        IAgingService agingService)
     {
         _repository = repository;
         _commissionService = commissionService;
+        _agingService = agingService;
     }
 
     /// <summary>Returns all invoices, each with its calculated commission.</summary>
@@ -47,6 +52,16 @@ public class InvoicesController : ControllerBase
         var total = _commissionService.CalculateTotalCommission();
         return Ok(new CommissionTotalDto(total, "PLN"));
     }
+
+    /// <summary>Returns unpaid invoices grouped into aging buckets by days past their due date.</summary>
+    [HttpGet("aging")]
+    public ActionResult<AgingReportDto> GetAging()
+    {
+        var buckets = _agingService.CalculateAging()
+            .Select(b => new AgingBucketDto(b.Label, b.Count, b.TotalAmount))
+            .ToList();
+        return Ok(new AgingReportDto(buckets, "PLN"));
+    }
 }
 
 // DTOs — API contract, decoupled from the domain entity.
@@ -60,3 +75,7 @@ public record InvoiceDto(
     decimal Commission);
 
 public record CommissionTotalDto(decimal Total, string Currency);
+
+public record AgingBucketDto(string Label, int Count, decimal TotalAmount);
+
+public record AgingReportDto(IReadOnlyList<AgingBucketDto> Buckets, string Currency);

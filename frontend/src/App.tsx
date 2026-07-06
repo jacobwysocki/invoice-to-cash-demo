@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type Invoice, type CommissionTotal } from './api';
+import { api, type Invoice, type CommissionTotal, type AgingReport } from './api';
 
 function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat('pl-PL', {
@@ -14,9 +14,22 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+// Maps a backend bucket label to a stable CSS key (drives the green -> red color ramp).
+function bucketKey(label: string): string {
+  switch (label) {
+    case 'Current': return 'current';
+    case '1-30 days': return 'd30';
+    case '31-60 days': return 'd60';
+    case '61-90 days': return 'd90';
+    case '90+ days': return 'd90plus';
+    default: return 'current';
+  }
+}
+
 export default function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState<CommissionTotal | null>(null);
+  const [aging, setAging] = useState<AgingReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,13 +37,15 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const [inv, tot] = await Promise.all([
+        const [inv, tot, age] = await Promise.all([
           api.getInvoices(),
           api.getCommissionTotal(),
+          api.getAging(),
         ]);
         if (!cancelled) {
           setInvoices(inv);
           setTotal(tot);
+          setAging(age);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Something went wrong');
@@ -46,6 +61,9 @@ export default function App() {
   const outstanding = invoices
     .filter((i) => i.status !== 'Paid')
     .reduce((sum, i) => sum + i.amount, 0);
+
+  const agingTotal = aging?.buckets.reduce((sum, b) => sum + b.totalAmount, 0) ?? 0;
+  const agingCurrency = aging?.currency ?? 'PLN';
 
   return (
     <div className="shell">
@@ -99,6 +117,53 @@ export default function App() {
                 <span className="stat-value stat-warn">{overdueCount}</span>
                 <span className="stat-note">need attention</span>
               </div>
+            </section>
+
+            <section className="aging" aria-label="Invoice aging">
+              <div className="aging-head">
+                <h2>Aging</h2>
+                <span className="aging-sub">Unpaid invoices by time past due</span>
+              </div>
+
+              {agingTotal > 0 && aging ? (
+                <>
+                  <div
+                    className="aging-bar"
+                    role="img"
+                    aria-label="Outstanding amount split across aging buckets"
+                  >
+                    {aging.buckets
+                      .filter((b) => b.totalAmount > 0)
+                      .map((b) => (
+                        <div
+                          key={b.label}
+                          className="aging-seg"
+                          data-bucket={bucketKey(b.label)}
+                          style={{ width: `${(b.totalAmount / agingTotal) * 100}%` }}
+                          title={`${b.label}: ${b.count} · ${formatMoney(b.totalAmount, agingCurrency)}`}
+                        />
+                      ))}
+                  </div>
+
+                  <ul className="aging-legend">
+                    {aging.buckets.map((b) => (
+                      <li
+                        key={b.label}
+                        className={b.count === 0 ? 'aging-item is-empty' : 'aging-item'}
+                      >
+                        <span className="aging-dot" data-bucket={bucketKey(b.label)} />
+                        <span className="aging-label">{b.label}</span>
+                        <span className="aging-count">{b.count}</span>
+                        <span className="aging-amount">
+                          {formatMoney(b.totalAmount, agingCurrency)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div className="aging-empty">No unpaid invoices &mdash; all clear.</div>
+              )}
             </section>
 
             <section className="table-wrap" aria-label="Invoices">

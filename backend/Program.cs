@@ -5,7 +5,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // --- Dependency Injection: register layered services ---
 builder.Services.AddSingleton<IInvoiceRepository, InMemoryInvoiceRepository>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ICommissionService, CommissionService>();
+builder.Services.AddScoped<IAgingService, AgingService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

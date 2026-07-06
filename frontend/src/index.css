@@ -140,6 +140,76 @@ body {
 .stat-warn { color: var(--warn); }
 .stat-note { font-size: 12px; color: var(--text-faint); }
 
+/* ---- aging ---- */
+.aging {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px 20px 18px;
+  margin-bottom: 28px;
+}
+.aging-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.aging-head h2 { font-size: 15px; font-weight: 620; letter-spacing: -0.01em; }
+.aging-sub { font-size: 12px; color: var(--text-faint); }
+
+.aging-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 100px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.aging-seg {
+  min-width: 3px;
+  transition: opacity 0.12s ease;
+}
+.aging-seg:hover { opacity: 0.82; }
+
+.aging-legend {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  list-style: none;
+}
+.aging-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 14px;
+  position: relative;
+}
+.aging-dot {
+  position: absolute;
+  left: 0; top: 4px;
+  width: 8px; height: 8px;
+  border-radius: 3px;
+}
+.aging-label { font-size: 12px; color: var(--text-dim); }
+.aging-count {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.aging-amount {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.aging-item.is-empty { opacity: 0.5; }
+.aging-item.is-empty .aging-count { color: var(--text-faint); }
+.aging-empty { color: var(--text-dim); font-size: 14px; padding: 6px 0 4px; }
+
+/* bucket colors: green (current) -> red (most overdue) */
+[data-bucket="current"] { background: var(--accent); }
+[data-bucket="d30"]     { background: #b8e24b; }
+[data-bucket="d60"]     { background: #e3b341; }
+[data-bucket="d90"]     { background: var(--warn); }
+[data-bucket="d90plus"] { background: #f85149; }
+
 /* ---- ledger table ---- */
 .table-wrap {
   background: var(--surface);
@@ -200,6 +270,7 @@ body {
 /* ---- responsive ---- */
 @media (max-width: 760px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
+  .aging-legend { grid-template-columns: repeat(3, 1fr); row-gap: 14px; }
   .content { padding: 28px 16px 36px; }
   .ledger .due, .ledger thead th:last-child { display: none; }
   .topbar-tag { display: none; }

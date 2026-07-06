@@ -18,6 +18,17 @@ export interface CommissionTotal {
   currency: string;
 }
 
+export interface AgingBucket {
+  label: string;
+  count: number;
+  totalAmount: number;
+}
+
+export interface AgingReport {
+  buckets: AgingBucket[];
+  currency: string;
+}
+
 const BASE = '/api';
 
 async function getJson<T>(path: string): Promise<T> {
@@ -31,4 +42,5 @@ async function getJson<T>(path: string): Promise<T> {
 export const api = {
   getInvoices: () => getJson<Invoice[]>('/invoices'),
   getCommissionTotal: () => getJson<CommissionTotal>('/invoices/commission-total'),
+  getAging: () => getJson<AgingReport>('/invoices/aging'),
 };
